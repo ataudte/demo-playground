@@ -3,6 +3,8 @@ Experimental scripts used for live demos, workshops, and presentations. A playgr
 
 ---
 
+## DNS Security
+
 <details>
   <summary>dns_dga-demo</summary>
 
@@ -54,6 +56,37 @@ Interactive demo script that simulates **DNS straying queries** by sending rando
 * [dns_tunnel.sh](dns_tunnel)
 
 Bash demo script that simulates **DNS tunneling** by encoding a file into a list of DNS-style hostnames (client mode) and reconstructing the original file from that hostname log (server mode).
+
+</details>
+
+<details>
+  <summary>dnscrypt-proxy_ctrl</summary>
+
+* [dnscrypt-proxy_ctrl.sh](dnscrypt-proxy_ctrl)
+
+Small control script to manage a **dnscrypt-proxy** instance that is started with a specific `dnscrypt-proxy.toml` config.
+
+</details>
+
+---
+
+## Nonsense
+
+<details>
+  <summary>gen_phrase</summary>
+
+* [gen_phrase.sh](gen_phrase)
+
+Generates **10 random corporate-buzzword phrases** by combining an adjective, a noun, a verb, and an adverb, then prints them to stdout (one per line).
+
+</details>
+
+<details>
+  <summary>no-as-a-service</summary>
+
+* [no-as-a-service.sh](no-as-a-service)
+
+Answers any valid yes/no question with a **firm “No”** and a randomly generated, nonsense justification.
 
 </details>
 
