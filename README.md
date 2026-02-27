@@ -70,6 +70,19 @@ Small control script to manage a **dnscrypt-proxy** instance that is started wit
 
 ---
 
+## Lab Setup
+
+<details>
+  <summary>create_vm-from-iso</summary>
+
+* [create_vm-from-iso.sh](create_vm-from-iso)
+
+Creates a VMware vSphere/ESXi virtual machine using `govc`, attaches an ISO image as a virtual CD-ROM, and powers the VM on.
+
+</details>
+
+---
+
 ## Nonsense
 
 <details>
