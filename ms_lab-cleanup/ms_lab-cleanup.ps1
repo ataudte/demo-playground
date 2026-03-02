@@ -108,7 +108,7 @@ function Clean-Dns {
     try {
       if ($type -eq "Forwarder") {
         Write-Host "Removing conditional forwarder zone: $name"
-        Remove-DnsServerConditionalForwarderZone -ComputerName $ComputerName -Name $name -Force
+        Remove-DnsServerZone -ComputerName $ComputerName -Name $name -Force
       } else {
         Write-Host "Removing DNS zone: $name (Type=$type, DSIntegrated=$($z.IsDsIntegrated))"
         Remove-DnsServerZone -ComputerName $ComputerName -Name $name -Force
