@@ -81,6 +81,15 @@ Creates a VMware vSphere/ESXi virtual machine using `govc`, attaches an ISO imag
 
 </details>
 
+<details>
+  <summary>ms_lab-cleanup</summary>
+
+* [ms_lab-cleanup.ps1](ms_lab-cleanup)
+
+Destructive lab cleanup helper for **Windows Server DNS and DHCP**.
+
+</details>
+
 ---
 
 ## Nonsense
