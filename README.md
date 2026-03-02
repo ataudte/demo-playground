@@ -82,6 +82,16 @@ Creates a VMware vSphere/ESXi virtual machine using `govc`, attaches an ISO imag
 </details>
 
 <details>
+  <summary>ms_demo-data</summary>
+
+* [ms_demo-data.ps1](ms_demo-data)
+
+Seeds a Windows Server (2019+) with example **DNS** and **DHCP** data for lab / demo use.
+
+</details>
+
+
+<details>
   <summary>ms_lab-cleanup</summary>
 
 * [ms_lab-cleanup.ps1](ms_lab-cleanup)
