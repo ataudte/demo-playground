@@ -28,7 +28,7 @@ Small utility script to convert between an IPv4 address in dotted-quad notation 
 
 * [dns_look-a-like.sh](dns_look-a-like)
 
-Demo script for generating **look‑alike domain names** (homoglyph / typo‑style variants) based on a legitimate base domain.
+Generates **look-a-like (homoglyph) domain variants** and prints their **Punycode** representation.
 
 </details>
 

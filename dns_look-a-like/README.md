@@ -1,49 +1,61 @@
 # dns_look-a-like.sh
 
 ## Description
-Demo script for generating **look‑alike domain names** (homoglyph / typo‑style variants) based on a legitimate base domain.
+Generates **look-a-like (homoglyph) domain variants** and prints their **Punycode** representation.
 
-The script creates visually or structurally similar domain names that are commonly used in:
-- Phishing demonstrations
-- DNS security awareness
-- Detection testing (typosquatting / look‑alike domains)
+What it does:
+- Takes a domain name as input
+- Splits it into:
+  - **LEFT**: everything except the last label
+  - **TLD**: the last label
+- Replaces ASCII characters in **LEFT** with visually similar Unicode homoglyphs (Cyrillic, Greek, and Latin extensions)
+- Prints each modified domain and its Punycode form (label-by-label conversion)
 
-It is designed purely for **education, demos, and testing**, not for abuse.
+This is useful for:
+- Defensive testing and awareness work around IDN homograph / phishing risk
+- Quickly seeing how Unicode variants map to `xn--` Punycode
 
 ---
 
 ## Usage
-Make the script executable and run it with a base domain:
-
 ```bash
-chmod +x dns_look-a-like.sh
-./dns_look-a-like.sh example.com
+./dns_look-a-like.sh <domain>
 ```
+
+Example:
+```bash
+./dns_look-a-like.sh example.com
+./dns_look-a-like.sh my-service.internal
+```
+
+Output format (per candidate):
+- `original:` / `modified:` domain
+- `punycode:` label-by-label Punycode using `idn -t -a`
 
 ---
 
 ## Requirements
-- Bash (tested with Bash 4+)
-- Standard Unix utilities (sed, awk, tr)
-
-No external libraries or network access required.
+- Bash
+- `idn` command available in PATH  
+  - Provided by GNU **libidn** or **libidn2** packages on many systems
+- UTF-8 capable terminal recommended (so homoglyphs render correctly)
 
 ---
 
 ## Input / Output
-- **Input:**  
-  A single fully qualified domain name passed as a command‑line argument.
-
-- **Output:**  
-  List of generated look‑alike domain names printed to STDOUT.
+- **Input:** One domain name as a single argument (e.g. `example.com`)
+- **Output:** Printed to stdout
+  - Original domain and its Punycode
+  - One modified candidate per supported ASCII character found in the LEFT part, plus its Punycode
 
 ---
 
 ## Notes
-- Generated domains are **not validated or registered**; the script performs no DNS lookups.
-- The character substitutions are intentionally simple and deterministic for clarity.
-- Intended as a teaching and demo tool, not a comprehensive typosquatting engine.
-- Useful in combination with DNS logging, RPZ demos, or security workshops.
+- **TLD is not modified.** Only the portion before the last dot is subject to replacement.
+- This script generates **one replacement at a time** (not all combinations).  
+  Example: if multiple replaceable characters exist, you will get one output per character type, not every permutation.
+- Some homoglyphs are **font-dependent** and may not look identical in all environments.
+- This is intended for **testing/awareness**. Do not use it for abuse.
 
 ---
 
