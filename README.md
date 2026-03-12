@@ -100,6 +100,15 @@ Destructive lab cleanup helper for **Windows Server DNS and DHCP**.
 
 </details>
 
+<details>
+  <summary>quad9_dig</summary>
+
+* [quad9_dig.sh](quad9_dig)
+
+Fetches the latest Quad9 top 500 domains JSON file from the `Quad9DNS/quad9-domains-top500` GitHub repository, extracts the domain names, and resolves each domain with `dig` against a chosen DNS server. The script stores the downloaded JSON, extracted domain list, and resolution results in a date-based temporary folder.
+
+</details>
+
 ---
 
 ## Nonsense
