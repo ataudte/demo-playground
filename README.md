@@ -70,7 +70,7 @@ Small control script to manage a **dnscrypt-proxy** instance that is started wit
 
 ---
 
-## Lab Setup
+## Lab Environment 
 
 <details>
   <summary>create_vm-from-iso</summary>
@@ -90,7 +90,6 @@ Seeds a Windows Server (2019+) with example **DNS** and **DHCP** data for lab / 
 
 </details>
 
-
 <details>
   <summary>ms_lab-cleanup</summary>
 
@@ -106,6 +105,20 @@ Destructive lab cleanup helper for **Windows Server DNS and DHCP**.
 * [quad9_dig.sh](quad9_dig)
 
 Fetches the latest Quad9 top 500 domains JSON file from the `Quad9DNS/quad9-domains-top500` GitHub repository, extracts the domain names, and resolves each domain with `dig` against a chosen DNS server. The script stores the downloaded JSON, extracted domain list, and resolution results in a date-based temporary folder.
+
+</details>
+
+<details>
+  <summary>sds_mcp_prototype</summary>
+
+* [ask-solidserver.sh](sds_mcp_prototype)
+* [ask_solidserver.py](sds_mcp_prototype)
+* [run-solidserver-mcp.sh](sds_mcp_prototype)
+* [solidserver_client.py](sds_mcp_prototype)
+* [solidserver_mcp.py](sds_mcp_prototype)
+* [solidserver_tools.py](sds_mcp_prototype)
+
+This package contains a small read-only SOLIDserver demo built around the Model Context Protocol (MCP).
 
 </details>
 
