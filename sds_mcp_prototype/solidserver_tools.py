@@ -727,25 +727,3 @@ TOOL_HANDLERS = {
     "lookup_dhcp_binding": tool_lookup_dhcp_binding,
     "get_system_summary": tool_get_system_summary,
 }
-
-# Legacy names retained so the old CLI can keep working with minimal changes
-TOOL_HANDLERS.update(
-    {
-        "get_host_by_name": tool_lookup_host_identity,
-        "get_ip_details": tool_investigate_ip,
-        "get_subnet_by_cidr": tool_summarize_subnet,
-        "get_next_available_ip_in_subnet": tool_find_candidate_free_ip,
-        "get_dns_records": tool_find_dns_records,
-        "get_dhcp_lease_or_static": tool_lookup_dhcp_binding,
-        "get_ipam_overview": tool_get_system_summary,
-    }
-)
-
-# Legacy function aliases for ask_solidserver.py
-tool_get_host_by_name = tool_lookup_host_identity
-tool_get_ip_details = tool_investigate_ip
-tool_get_subnet_by_cidr = tool_summarize_subnet
-tool_get_next_available_ip_in_subnet = tool_find_candidate_free_ip
-tool_get_dns_records = tool_find_dns_records
-tool_get_dhcp_lease_or_static = tool_lookup_dhcp_binding
-tool_get_ipam_overview = tool_get_system_summary

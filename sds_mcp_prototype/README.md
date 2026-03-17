@@ -93,10 +93,10 @@ Both approaches require valid SOLIDserver environment variables.
 ---
 
 ## Requirements
-- Python 3.10+
+- Python 3.9+
 - zsh for the provided shell launchers
 - External Python modules:
-  - `requests`
+  - none required beyond the Python standard library
 - Vendor-specific dependency:
   - EfficientIP SOLIDserver REST API
 
@@ -104,7 +104,7 @@ The scripts expect the following environment variables:
 - `SOLIDSERVER_URL`
 - `SOLIDSERVER_USER`
 - `SOLIDSERVER_PASSWORD`
-- `SOLIDSERVER_INSECURE_TLS`
+- `SOLIDSERVER_INSECURE_TLS` (optional, defaults effectively to `true` in the Python client and is set to `true` by both shell launchers)
 
 The shell launchers prompt for host, username, and password if these are not already set.
 
@@ -130,7 +130,7 @@ Usually launched through:
 ```
 
 ## Requirements
-- Python 3.10+
+- Python 3.9+
 - Access to `solidserver_mcp.py` in the same directory
 - Valid `SOLIDSERVER_*` environment variables
 
@@ -150,18 +150,18 @@ Usually launched through:
 ## Description
 Low-level SOLIDserver API client wrapper.
 
-It is responsible for HTTP requests, authentication, TLS handling, request logging to stderr, and returning parsed API responses to higher layers.
+It is responsible for HTTP requests, authentication header construction, optional insecure TLS handling, and returning parsed API responses to higher layers.
 
 ## Usage
 Used as a library by `solidserver_tools.py`.
 
 ```bash
-python3 -c "from solidserver_client import SolidServerClient; print(SolidServerClient().base_url)"
+python3 -c "from solidserver_client import call_service; print(call_service.__name__)"
 ```
 
 ## Requirements
-- Python 3.10+
-- `requests`
+- Python 3.9+
+- no third-party Python dependency required
 - Access to the SOLIDserver REST API
 
 ## Input / Output
@@ -170,8 +170,8 @@ python3 -c "from solidserver_client import SolidServerClient; print(SolidServerC
 
 ## Notes
 - This is the wrapper layer, not the MCP layer
-- It should stay transport-focused and not contain MCP protocol logic
-- Logging goes to stderr to avoid corrupting stdio protocol output in the MCP server
+- It stays transport-focused and does not contain MCP protocol logic
+- It uses `urllib.request` and sends credentials through `x-ipm-username` and `x-ipm-password` headers
 
 ---
 
@@ -193,7 +193,7 @@ Usually launched through:
 ```
 
 ## Requirements
-- Python 3.10+
+- Python 3.9+
 - `solidserver_tools.py`
 - Valid `SOLIDSERVER_*` environment variables
 
@@ -237,7 +237,7 @@ Exposed tool names include:
 - `get_system_summary`
 
 ## Requirements
-- Python 3.10+
+- Python 3.9+
 - `solidserver_client.py`
 - Access to SOLIDserver data via API
 

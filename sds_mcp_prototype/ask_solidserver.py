@@ -172,6 +172,18 @@ def strip_filler(text: str) -> str:
     return normalize_text(t)
 
 
+def strip_command_prefix(text: str, prefixes: tuple[str, ...]) -> Optional[str]:
+    t = normalize_text(text)
+    tl = t.lower()
+    for prefix in prefixes:
+        token = prefix.lower().strip() + " "
+        if tl.startswith(token):
+            value = t[len(token):].strip()
+            if value:
+                return value
+    return None
+
+
 def route_question(client: McpStdioClient, question: str) -> Dict[str, Any]:
     q = normalize_text(question)
     ql = q.lower()
@@ -197,6 +209,33 @@ def route_question(client: McpStdioClient, question: str) -> Dict[str, Any]:
     mac = extract_first(MAC_RE, q)
     ip = extract_first(IPV4_RE, q)
     cleaned = strip_filler(q)
+
+    explicit_host = strip_command_prefix(q, ("host", "hostname", "device"))
+    if explicit_host:
+        return client.call("tools/call", {"name": "lookup_host_identity", "arguments": {"name": explicit_host}})
+
+    explicit_ip = strip_command_prefix(q, ("ip", "address"))
+    if explicit_ip:
+        explicit_ip_value = extract_first(IPV4_RE, explicit_ip)
+        if explicit_ip_value:
+            return client.call("tools/call", {"name": "investigate_ip", "arguments": {"ip": explicit_ip_value}})
+
+    explicit_subnet = strip_command_prefix(q, ("subnet", "network"))
+    if explicit_subnet:
+        explicit_cidr = extract_first(CIDR_RE, explicit_subnet)
+        if explicit_cidr:
+            if "available" in ql and "ip" in ql:
+                return client.call("tools/call", {"name": "find_candidate_free_ip", "arguments": {"cidr": explicit_cidr}})
+            return client.call("tools/call", {"name": "summarize_subnet", "arguments": {"cidr": explicit_cidr}})
+
+    explicit_dns = strip_command_prefix(q, ("dns", "record", "records"))
+    if explicit_dns:
+        return client.call("tools/call", {"name": "find_dns_records", "arguments": {"query": explicit_dns}})
+
+    explicit_dhcp = strip_command_prefix(q, ("dhcp", "lease", "reservation", "static"))
+    if explicit_dhcp:
+        explicit_mac = extract_first(MAC_RE, explicit_dhcp)
+        return client.call("tools/call", {"name": "lookup_dhcp_binding", "arguments": {"query": explicit_mac or explicit_dhcp}})
 
     if (("next" in ql and "available" in ql and "ip" in ql and cidr) or ("available" in ql and "ip" in ql and cidr)):
         return client.call("tools/call", {"name": "find_candidate_free_ip", "arguments": {"cidr": cidr}})
@@ -293,19 +332,13 @@ def interactive_loop(client: McpStdioClient) -> None:
     print("[ SOLIDserver MCP Prototype ]")
     print()
     print("[ Try things like: ]")
-    print("  Where is laptop39396")
-    print("  Do you know laptop39396")
-    print("  What do you know about 10.0.0.3")
-    print("  Show subnet 10.0.0.0/24")
-    print("  Next available IP of 10.0.0.0/24")
-    print("  Find DNS laptop39396")
-    print("  Find DHCP 01:02:00:5e:00:00:0a")
-    print("  Give me an overview")
-    print("  tools")
-    print("  resources")
-    print("  resource about")
-    print("  resource safety")
-    print("  prompts")
+    print("  where is laptop39396")
+    print("  what do you know about 10.0.0.3")
+    print("  show subnet 10.0.0.0/24")
+    print("  provide next available IP of 10.0.0.0/24")
+    print("  find laptop39396")
+    print("  find 01:02:00:5e:00:00:0a")
+    print("  [overview|tools|resources|prompts]")
     print("  exit")
     print()
 
