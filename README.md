@@ -122,6 +122,15 @@ This package contains a small read-only SOLIDserver demo built around the Model 
 
 </details>
 
+<details>
+  <summary>tranco_dig</summary>
+
+* [tranco_dig.sh](tranco_dig)
+
+Downloads the [Tranco top 1M list](https://tranco-list.eu/) including subdomains, extracts the CSV file from the ZIP archive, and resolves each domain with `dig` against a chosen DNS resolver.
+
+</details>
+
 ---
 
 ## Nonsense
