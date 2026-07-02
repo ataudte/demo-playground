@@ -123,6 +123,15 @@ This package contains a small read-only SOLIDserver demo built around the Model 
 </details>
 
 <details>
+  <summary>sds_python_demo</summary>
+
+* [sds_python_demo](sds_python_demo)
+
+Python demo flow for the advanced `SOLIDserverRest` API. It connects to SOLIDserver, selects IPAM context, finds IPv4 capacity, prepares subnet allocation, publishes a DNS record, and recaps the generated demo artifacts.
+
+</details>
+
+<details>
   <summary>tranco_dig</summary>
 
 * [tranco_dig.sh](tranco_dig)
