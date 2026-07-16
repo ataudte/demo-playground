@@ -132,6 +132,15 @@ Python demo flow for the advanced `SOLIDserverRest` API. It connects to SOLIDser
 </details>
 
 <details>
+  <summary>test_gcp_auth</summary>
+
+* [test_gcp_auth.sh](test_gcp_auth)
+
+Tests Google Cloud service account authentication and optionally verifies access to Cloud DNS and VPC networks.
+
+</details>
+
+<details>
   <summary>tranco_dig</summary>
 
 * [tranco_dig.sh](tranco_dig)
