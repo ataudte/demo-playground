@@ -163,6 +163,15 @@ Generates **10 random corporate-buzzword phrases** by combining an adjective, a 
 </details>
 
 <details>
+  <summary>mac_inventory</summary>
+
+* [mac_inventory.sh](mac_inventory)
+
+Collects hardware, operating-system, storage, network, display, battery, and security information from the Mac on which it is run. It prints a human-readable summary to the terminal and saves the full inventory as a private, timestamped JSON file in the current directory.
+
+</details>
+
+<details>
   <summary>no-as-a-service</summary>
 
 * [no-as-a-service.sh](no-as-a-service)
