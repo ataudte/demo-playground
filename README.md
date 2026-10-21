@@ -180,3 +180,11 @@ Answers any valid yes/no question with a **firm “No”** and a randomly genera
 
 </details>
 
+<details>
+  <summary>terminal_size</summary>
+
+* [terminal_size.sh](terminal_size)
+
+Interactive macOS utility for resizing the front **Apple Terminal window** using preset or custom aspect ratios. Supports adjustable width, automatic height calculation, and a repeating menu for switching between ratios.
+
+</details>
