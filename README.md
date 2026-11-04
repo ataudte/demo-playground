@@ -2,7 +2,12 @@
 Experimental scripts used for live demos, workshops, and presentations. A playground for showcasing ideas, testing concepts, and explaining technical behavior. Not intended for production use.
 
 ---
+## Table of Contents
 
+- [DNS Security](#dns-security)
+- [Lab Environment](#lab-environment)
+- [Nonsense](#nonsense)
+---
 ## DNS Security
 
 <details>
