@@ -159,6 +159,15 @@ Downloads the [Tranco top 1M list](https://tranco-list.eu/) including subdomains
 ## Nonsense
 
 <details>
+  <summary>download_oarc</summary>
+
+* [download_oarc.sh](playground/download_oarc)
+
+Downloads presentation files from a **DNS-OARC Indico event**, preferring **PDF** when available. Creates or reuses a Python virtual environment, renames files by event, speaker, and talk title, and generates a ZIP archive and CSV index.
+
+</details>
+
+<details>
   <summary>gen_phrase</summary>
 
 * [gen_phrase.sh](playground/gen_phrase)
