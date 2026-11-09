@@ -220,3 +220,12 @@ Answers any valid yes/no question with a **firm “No”** and a randomly genera
 Interactive macOS utility for resizing the front **Apple Terminal window** using preset or custom aspect ratios. Supports adjustable width, automatic height calculation, and a repeating menu for switching between ratios.
 
 </details>
+
+<details>
+  <summary>wp_yearly_pdfs</summary>
+
+* [wp_yearly_pdfs.py](playground/wp_yearly_pdfs)
+
+Builds **one PDF per year** from all images in the posts of any public WordPress blog, with each page showing one image plus its post title and date. Uses the WordPress REST API with an HTML-scraping fallback, caches downloads, and manages its own private virtual environment.
+
+</details>
