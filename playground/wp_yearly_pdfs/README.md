@@ -14,13 +14,13 @@ Key features:
 - Downloaded images are cached, so an interrupted run can simply be restarted.
 - Self-managing environment: on first run it creates a private virtual environment (`.wp_pdf_venv` next to the script), installs missing packages there and re-launches itself. Nothing is installed globally.
 
-Example: *Turn the whole photo archive of `https://ataudte.de/` into one PDF per year.*
+Example: *Turn the whole photo archive of `https://example.com/` into one PDF per year.*
 
 ---
 
 ## Usage
 ```bash
-python3 wp_yearly_pdfs.py https://ataudte.de/
+python3 wp_yearly_pdfs.py https://example.com/
 python3 wp_yearly_pdfs.py example.com/blog --years 2024 2025
 python3 wp_yearly_pdfs.py example.com --max-px 2400 --workers 8
 python3 wp_yearly_pdfs.py example.com --reset-env     # rebuild the private environment
