@@ -1,0 +1,9 @@
+config.json
+result.json
+.config-*
+.venv/
+.ansible/
+.ansible-env/
+__pycache__/
+*.pyc
+.DS_Store

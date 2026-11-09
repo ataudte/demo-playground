@@ -123,6 +123,15 @@ Fetches the latest Quad9 top 500 domains JSON file from the `Quad9DNS/quad9-doma
 </details>
 
 <details>
+  <summary>sds_ansible_demo</summary>
+
+* [sds_ansible_demo](playground/sds_ansible_demo)
+
+Ansible demo using the official [EfficientIP Ansible collection](https://gitlab.com/efficientip/efficientip-ansible-collection) and SOLIDserver REST API. Six numbered playbooks connect to SOLIDserver, inspect IPAM, create a network and host with DNS, add an application CNAME, verify the resources, and clean up, including matching PTR records.
+
+</details>
+
+<details>
   <summary>sds_mcp_prototype</summary>
 
 * [ask-solidserver.sh](playground/sds_mcp_prototype)

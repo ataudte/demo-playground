@@ -1,0 +1,102 @@
+---
+- name: Verify the demo resources and save result.json
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../config.json
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    fqdn: '{{ hostname }}.{{ dns_zone }}'
+    network_rows: '{{ observed.results[0].json | default([]) }}'
+    address_rows: '{{ observed.results[1].json | default([]) }}'
+    dns_rows: '{{ observed.results[2].json | default([]) }}'
+    app_fqdn: '{{ app_alias | default(hostname[:59] ~ "-app") }}.{{ dns_zone }}'
+    app_rows: '{{ observed.results[3].json | default([]) }}'
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: '{{ solidserver.username }}'
+      url_password: '{{ solidserver.password }}'
+      force_basic_auth: true
+      validate_certs: '{{ solidserver.check_tls }}'
+      ca_path: '{{ ca_file | default(omit, true) }}'
+      follow_redirects: none
+      use_netrc: false
+      return_content: true
+      status_code:
+        - 200
+        - 204
+  tasks:
+    - name: '[SOLIDserver REST] Read the network, address, host A record and application CNAME'
+      ansible.builtin.uri:
+        url: >-
+          https://{{ solidserver.host }}/rest/{{ item.service }}?{{ {'WHERE': item.where, 'limit': 2} | urlencode }}
+      loop:
+        - service: ip_block_subnet_list
+          where: site_name='{{ space }}' and subnet_name='{{ network_name }}'
+        - service: ip_address_list
+          where: site_name='{{ space }}' and hostaddr='{{ address }}' and type<>'free'
+        - service: dns_rr_list
+          where: dns_name='{{ dns_server }}' and rr_full_name='{{ fqdn }}'
+        - service: dns_rr_list
+          where: dns_name='{{ dns_server }}' and rr_full_name='{{ app_fqdn }}'
+      register: observed
+      failed_when: >-
+        observed.status not in [200, 204] or (observed.status == 200 and (observed.json is not defined or observed.json
+        | type_debug != 'list')) or (observed.json | default([]) | selectattr('errno', 'defined') | rejectattr('errno',
+        'in', [0, '0']) | list | length > 0)
+      no_log: true
+    - name: Verify the returned objects match the configuration
+      ansible.builtin.assert:
+        that:
+          - network_rows | length == 1
+          - address_rows | length == 1
+          - dns_rows | length == 1
+          - network_rows[0].start_hostaddr == network.split('/')[0]
+          - network_rows[0].subnet_size | int == 2 ** (32 - (network.split('/')[1] | int))
+          - network_rows[0].is_terminal | int == 1
+          - address_rows[0].name == fqdn
+          - address_rows[0].hostaddr == address
+          - address_rows[0].subnet_id | string == network_rows[0].subnet_id | string
+          - dns_rows[0].rr_type == 'A'
+          - dns_rows[0].value1 == address
+          - dns_rows[0].ttl | int == ttl | int
+          - dns_rows[0].dnsview_id | default('0', true) | string == '0'
+          - app_rows | length == 1
+          - app_rows[0].rr_type == 'CNAME'
+          - app_rows[0].value1 | lower | regex_replace('[.]$', '') == fqdn | lower
+          - app_rows[0].ttl | int == ttl | int
+          - app_rows[0].dnsview_id | default('0', true) | string == '0'
+          - app_rows[0].dnszone_name == dns_zone
+          - app_rows[0].rr_id | string != dns_rows[0].rr_id | string
+        fail_msg: Read-back does not match the requested host and application alias. No new handoff was written.
+    - name: Assemble the verified handoff
+      ansible.builtin.set_fact:
+        result:
+          verified: true
+          verification_scope: api_readback
+          space: '{{ space }}'
+          network: '{{ network }}'
+          network_id: '{{ network_rows[0].subnet_id }}'
+          address: '{{ address }}'
+          address_id: '{{ address_rows[0].ip_id }}'
+          fqdn: '{{ fqdn }}'
+          ttl: '{{ dns_rows[0].ttl | int }}'
+          dns_record_id: '{{ dns_rows[0].rr_id }}'
+          application_fqdn: '{{ app_fqdn }}'
+          application_target: '{{ fqdn }}'
+          application_dns_record_id: '{{ app_rows[0].rr_id }}'
+          application_ttl: '{{ app_rows[0].ttl | int }}'
+    - name: Save the handoff
+      ansible.builtin.copy:
+        content: |
+          {{ result | to_nice_json }}
+        dest: '{{ playbook_dir | dirname }}/result.json'
+        mode: '0600'
+    - name: Show the API verification summary
+      ansible.builtin.debug:
+        msg: >-
+          Host {{ fqdn }} -> {{ address }} and alias {{ app_fqdn }} verified by API. Saved result.json.
+    - name: Show the full verified result
+      ansible.builtin.debug:
+        var: result

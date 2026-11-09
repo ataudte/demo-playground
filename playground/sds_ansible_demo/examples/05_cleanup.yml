@@ -1,0 +1,339 @@
+---
+- name: Remove the alias, host A/PTR records, address and empty child network
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../config.json
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    fqdn: '{{ hostname }}.{{ dns_zone }}'
+    networks: '{{ observed.results[0].json | default([]) }}'
+    addresses: '{{ observed.results[1].json | default([]) }}'
+    records: '{{ observed.results[2].json | default([]) }}'
+    delete_api_rows: |-
+      {{ [network_delete.json] if network_delete.json | default(none) is mapping
+         else (network_delete.json if network_delete.json | default(none) | type_debug == 'list' else []) }}
+    delete_api_codes: '{{ delete_api_rows | selectattr(''errno'', ''defined'') | map(attribute=''errno'') | map(''int'',
+      -1) | list }}'
+    delete_api_message: |-
+      {{ (delete_api_rows | selectattr('errmsg', 'defined') | map(attribute='errmsg') | map('string') | join('; ')
+          | replace((solidserver.username ~ ':' ~ solidserver.password) | b64encode, '[redacted]')
+          | replace(solidserver.password | urlencode, '[redacted]')
+          | replace(solidserver.password, '[redacted]')
+          | replace(solidserver.username, '[redacted]')) | default('No API message returned', true) }}
+    delete_diagnostic: >-
+      HTTP={{ network_delete.status | default(-1) }}, response_format={{ network_delete.json | default(none) | type_debug
+      }}, API_errno={{ delete_api_codes }}, API_message={{ delete_api_message }}.
+    app_fqdn: '{{ app_alias | default(hostname[:59] ~ "-app") }}.{{ dns_zone }}'
+    app_records: '{{ observed.results[3].json | default([]) }}'
+    ptr_name: '{{ address.split(''.'') | reverse | join(''.'') }}.in-addr.arpa'
+    reverse_server_name: '{{ reverse_dns_server | default(dns_server, true) }}'
+    ptr_where: dns_name='{{ reverse_server_name }}' and rr_full_name='{{ ptr_name }}'
+    ptr_records: '{{ observed.results[4].json | default([]) }}'
+    ptr_snapshot_records: '{{ ptr_snapshot.json | default([]) }}'
+    ptr_api_rows: |-
+      {{ [ptr_delete.json] if ptr_delete.json | default(none) is mapping
+         else (ptr_delete.json if ptr_delete.json | default(none) | type_debug == 'list' else []) }}
+    ptr_api_codes: '{{ ptr_api_rows | selectattr(''errno'', ''defined'') | map(attribute=''errno'') | map(''int'', -1)
+      | list }}'
+    ptr_api_message: |-
+      {{ (ptr_api_rows | selectattr('errmsg', 'defined') | map(attribute='errmsg') | map('string') | join('; ')
+          | replace((solidserver.username ~ ':' ~ solidserver.password) | b64encode, '[redacted]')
+          | replace(solidserver.password | urlencode, '[redacted]')
+          | replace(solidserver.password, '[redacted]')
+          | replace(solidserver.username, '[redacted]')) | default('No API message returned', true) }}
+    ptr_diagnostic: >-
+      HTTP={{ ptr_delete.status | default(-1) }}, response_format={{ ptr_delete.json | default(none) | type_debug }},
+      API_errno={{ ptr_api_codes }}, API_message={{ ptr_api_message }}.
+  module_defaults:
+    ansible.builtin.uri:
+      url_username: '{{ solidserver.username }}'
+      url_password: '{{ solidserver.password }}'
+      force_basic_auth: true
+      validate_certs: '{{ solidserver.check_tls }}'
+      ca_path: '{{ ca_file | default(omit, true) }}'
+      follow_redirects: none
+      use_netrc: false
+      return_content: true
+      status_code:
+        - 200
+        - 204
+  tasks:
+    - name: '[SOLIDserver REST] Inspect the exact resources before cleanup'
+      ansible.builtin.uri:
+        url: >-
+          https://{{ solidserver.host }}/rest/{{ item.service }}?{{ {'WHERE': item.where, 'limit': 2} | urlencode }}
+      loop:
+        - service: ip_block_subnet_list
+          where: site_name='{{ space }}' and subnet_name='{{ network_name }}'
+        - service: ip_address_list
+          where: site_name='{{ space }}' and hostaddr='{{ address }}' and type<>'free'
+        - service: dns_rr_list
+          where: dns_name='{{ dns_server }}' and rr_full_name='{{ fqdn }}'
+        - service: dns_rr_list
+          where: dns_name='{{ dns_server }}' and rr_full_name='{{ app_fqdn }}'
+        - service: dns_rr_list
+          where: '{{ ptr_where }}'
+      register: observed
+      failed_when: >-
+        observed.status not in [200, 204] or (observed.status == 200 and (observed.json is not defined or observed.json
+        | type_debug != 'list')) or (observed.json | default([]) | selectattr('errno', 'defined') | rejectattr('errno',
+        'in', [0, '0']) | list | length > 0)
+      no_log: true
+    - name: Require matching network and DNS identities before cleanup
+      ansible.builtin.assert:
+        that:
+          - networks | length <= 1 and addresses | length <= 1 and records | length <= 1
+          - |-
+            networks | length == 0 or (networks[0].start_hostaddr == network.split('/')[0] and
+             networks[0].subnet_size | int == 2 ** (32 - (network.split('/')[1] | int)) and
+             networks[0].is_terminal | int == 1 and
+             networks[0].subnet_id | default(0) | int > 0)
+          - |-
+            records | length == 0 or (records[0].rr_type == 'A' and records[0].value1 == address and
+             records[0].dnsview_id | default('0', true) | string == '0')
+          - app_records | length <= 1
+          - >-
+            app_records | length == 0 or (app_records[0].rr_type == 'CNAME' and app_records[0].value1 | lower | regex_replace('[.]$',
+            '') == fqdn | lower and app_records[0].dnsview_id | default('0', true) | string == '0' and app_records[0].dnszone_name
+            == dns_zone)
+        fail_msg: Resource identities conflict. Inspect them before cleanup.
+    - name: Verify the IPAM host and allow only the configured application alias
+      ansible.builtin.assert:
+        that:
+          - networks | length == 1
+          - addresses[0].hostaddr | default('') == address
+          - addresses[0].name | default('') | lower | regex_replace('[.]$', '') == fqdn | lower
+          - addresses[0].subnet_id | default('') | string == networks[0].subnet_id | string
+          - addresses[0].ip_id | default(0) | int > 0
+          - normalized_ipam_aliases | difference([app_fqdn | lower]) | length == 0
+        fail_msg: >-
+          IPAM host identity or aliases conflict. Expected: address={{ address }}, name={{ fqdn }}, subnet_id={{ networks[0].subnet_id
+          if networks | length == 1 else 'no matching child' }}, allowed_IPAM_alias={{ app_fqdn }} (or none). Existing:
+          ip_id={{ addresses[0].ip_id | default('not returned') }}, address={{ addresses[0].hostaddr | default('not returned')
+          }}, name={{ addresses[0].name | default('not returned') }}, subnet_id={{ addresses[0].subnet_id | default('not
+          returned') }}, ip_alias={{ addresses[0].ip_alias | default('') | to_json }}, normalized_aliases={{ normalized_ipam_aliases
+          }}. No cleanup deletes were attempted. Unrelated IPAM aliases must be retained.
+      vars:
+        raw_ipam_aliases: '{{ addresses[0].ip_alias | default('''', true) }}'
+        ipam_alias_names: >-
+          {{ raw_ipam_aliases if raw_ipam_aliases | type_debug == 'list' else (raw_ipam_aliases | string | regex_replace('[,;\n]+',
+          '|')).split('|') }}
+        normalized_ipam_aliases: >-
+          {{ ipam_alias_names | map('string') | map('trim') | map('lower') | map('regex_replace', '[.]$', '') | reject('equalto',
+          '') | unique | list }}
+      when: addresses | length == 1
+    - name: Verify the reverse DNS identity before any cleanup delete
+      ansible.builtin.assert:
+        that:
+          - ptr_rows | length <= 1
+          - >-
+            ptr_rows | length == 0 or (ptr_rows[0].rr_type | default('') | upper == 'PTR' and ptr_rows[0].value1 | default('')
+            | lower | regex_replace('[.]$', '') in [fqdn | lower, app_fqdn | lower] and ptr_rows[0].rr_full_name | default('')
+            | lower | regex_replace('[.]$', '') == ptr_name | lower and ptr_rows[0].dnsview_id | default('0', true) |
+            string == '0' and ptr_rows[0].rr_id | default(0) | int > 0)
+        fail_msg: >-
+          Reverse DNS identity conflicts for {{ ptr_name }} on {{ reverse_server_name }}. Expected at most one default-view
+          PTR pointing to {{ fqdn }} or {{ app_fqdn }}. Returned_records={{ ptr_rows | length }}, type={{ ptr_rows[0].rr_type
+          | default('not returned') if ptr_rows | length == 1 else 'not unique' }}, target={{ ptr_rows[0].value1 | default('not
+          returned') if ptr_rows | length == 1 else 'not unique' }}, view_id={{ ptr_rows[0].dnsview_id | default('not
+          returned') if ptr_rows | length == 1 else 'not unique' }}, record_id={{ ptr_rows[0].rr_id | default('not returned')
+          if ptr_rows | length == 1 else 'not unique' }}. An unrelated PTR or reverse-owner CNAME will not be deleted.
+      vars:
+        ptr_rows: '{{ ptr_records }}'
+    - name: '[SOLIDserver collection] Remove the application CNAME alias'
+      community.efficientip.solidserver_dns_rr:
+        provider: '{{ solidserver }}'
+        dnsserver: '{{ dns_server }}'
+        dnszone: '{{ dns_zone }}'
+        name: '{{ app_fqdn }}'
+        rrtype: CNAME
+        rrvalues:
+          - '{{ fqdn }}.'
+        state: absent
+      when: app_records | length == 1
+      no_log: true
+    - name: '[SOLIDserver collection] Remove the host A record'
+      community.efficientip.solidserver_dns_rr:
+        provider: '{{ solidserver }}'
+        dnsserver: '{{ dns_server }}'
+        dnszone: '{{ dns_zone }}'
+        name: '{{ fqdn }}'
+        rrtype: A
+        rrvalues:
+          - '{{ address }}'
+        state: absent
+      when: records | length == 1
+      no_log: true
+    - name: '[SOLIDserver collection] Remove the demo IP address'
+      community.efficientip.solidserver_ipam_ip:
+        provider: '{{ solidserver }}'
+        space: '{{ space }}'
+        subnet: '{{ network }}'
+        ip: '{{ address }}'
+        hostname: '{{ fqdn }}'
+        state: absent
+      when: addresses | length == 1
+      no_log: true
+    - name: '[SOLIDserver REST] Inspect the PTR remaining after IPAM address removal'
+      ansible.builtin.uri:
+        url: 'https://{{ solidserver.host }}/rest/dns_rr_list?{{ {''WHERE'': ptr_where, ''limit'': 2} | urlencode }}'
+      register: ptr_snapshot
+      failed_when: >-
+        ptr_snapshot.status not in [200, 204] or (ptr_snapshot.status == 200 and (ptr_snapshot.json is not defined or
+        ptr_snapshot.json | type_debug != 'list')) or (ptr_snapshot.json | default([]) | selectattr('errno', 'defined')
+        | rejectattr('errno', 'in', [0, '0']) | list | length > 0)
+      no_log: true
+    - name: Verify any remaining PTR still belongs to the configured demo
+      ansible.builtin.assert:
+        that:
+          - ptr_rows | length <= 1
+          - >-
+            ptr_rows | length == 0 or (ptr_rows[0].rr_type | default('') | upper == 'PTR' and ptr_rows[0].value1 | default('')
+            | lower | regex_replace('[.]$', '') in [fqdn | lower, app_fqdn | lower] and ptr_rows[0].rr_full_name | default('')
+            | lower | regex_replace('[.]$', '') == ptr_name | lower and ptr_rows[0].dnsview_id | default('0', true) |
+            string == '0' and ptr_rows[0].rr_id | default(0) | int > 0)
+        fail_msg: >-
+          Reverse DNS identity conflicts for {{ ptr_name }} on {{ reverse_server_name }}. Expected at most one default-view
+          PTR pointing to {{ fqdn }} or {{ app_fqdn }}. Returned_records={{ ptr_rows | length }}, type={{ ptr_rows[0].rr_type
+          | default('not returned') if ptr_rows | length == 1 else 'not unique' }}, target={{ ptr_rows[0].value1 | default('not
+          returned') if ptr_rows | length == 1 else 'not unique' }}, view_id={{ ptr_rows[0].dnsview_id | default('not
+          returned') if ptr_rows | length == 1 else 'not unique' }}, record_id={{ ptr_rows[0].rr_id | default('not returned')
+          if ptr_rows | length == 1 else 'not unique' }}. An unrelated PTR or reverse-owner CNAME will not be deleted.
+      vars:
+        ptr_rows: '{{ ptr_snapshot_records }}'
+    - name: '[SOLIDserver REST] Remove the verified reverse PTR by record ID'
+      ansible.builtin.uri:
+        url: >-
+          https://{{ solidserver.host }}/rest/dns_rr_delete?{{ {'rr_id': ptr_snapshot_records[0].rr_id} | urlencode }}
+        method: DELETE
+        status_code:
+          - 200
+          - 201
+          - 204
+      when: ptr_snapshot_records | length == 1
+      register: ptr_delete
+      failed_when: false
+      changed_when: false
+      no_log: true
+    - name: Validate the PTR deletion response and show any API error safely
+      ansible.builtin.assert:
+        that:
+          - ptr_delete.status | default(-1) | int in [200, 201, 204]
+          - ptr_api_codes | reject('equalto', 0) | list | length == 0
+        fail_msg: >-
+          PTR deletion was not confirmed for {{ ptr_name }}, record_id={{ ptr_snapshot_records[0].rr_id }}. {{ ptr_diagnostic
+          }} Network deletion and cleanup success have not been reached.
+      when: ptr_snapshot_records | length == 1
+    - name: '[SOLIDserver REST] Confirm reverse PTR cleanup'
+      ansible.builtin.uri:
+        url: 'https://{{ solidserver.host }}/rest/dns_rr_list?{{ {''WHERE'': ptr_where, ''limit'': 2} | urlencode }}'
+      register: ptr_verified
+      failed_when: >-
+        ptr_verified.status not in [200, 204] or (ptr_verified.status == 200 and (ptr_verified.json is not defined or
+        ptr_verified.json | type_debug != 'list')) or (ptr_verified.json | default([]) | selectattr('errno', 'defined')
+        | rejectattr('errno', 'in', [0, '0']) | list | length > 0)
+      no_log: true
+    - name: Require reverse DNS cleanup before deleting the empty network
+      ansible.builtin.assert:
+        that:
+          - ptr_verified.json | default([]) | length == 0
+        fail_msg: >-
+          PTR cleanup is incomplete: {{ ptr_name }} on {{ reverse_server_name }} still returns {{ ptr_verified.json |
+          default([]) | length }} record(s). {{ ptr_diagnostic if ptr_snapshot_records | length == 1 else "No PTR deletion
+          was needed at the snapshot." }} The empty-network deletion was not reached.
+      changed_when: ptr_snapshot_records | length == 1
+    - name: '[SOLIDserver REST] Check remaining used addresses and pools'
+      ansible.builtin.uri:
+        url: >-
+          https://{{ solidserver.host }}/rest/{{ item.service }}?{{ {'WHERE': item.where, 'limit': 1} | urlencode }}
+      loop:
+        - service: ip_address_list
+          where: subnet_id={{ networks[0].subnet_id | default(0) | int }} and type<>'free'
+        - service: ip_pool_list
+          where: subnet_id={{ networks[0].subnet_id | default(0) | int }}
+      when: networks | length == 1
+      register: remaining
+      failed_when: >-
+        remaining.status not in [200, 204] or (remaining.status == 200 and (remaining.json is not defined or remaining.json
+        | type_debug != 'list')) or (remaining.json | default([]) | selectattr('errno', 'defined') | rejectattr('errno',
+        'in', [0, '0']) | list | length > 0)
+      no_log: true
+    - name: Require an empty child before deleting it
+      ansible.builtin.assert:
+        that:
+          - remaining.results[0].json | default([]) | length == 0
+          - remaining.results[1].json | default([]) | length == 0
+        fail_msg: The child still contains used addresses or pools. It was retained.
+      when: networks | length == 1
+    - name: '[SOLIDserver REST] Remove the verified empty demo network by ID'
+      ansible.builtin.uri:
+        url: >-
+          https://{{ solidserver.host }}/rest/ip_subnet_delete?{{ {'subnet_id': networks[0].subnet_id} | urlencode }}
+        method: DELETE
+        status_code:
+          - 200
+          - 201
+          - 204
+      when: networks | length == 1
+      register: network_delete
+      failed_when: false
+      changed_when: false
+      no_log: true
+    - name: Validate the network deletion response and show any API error safely
+      ansible.builtin.assert:
+        that:
+          - network_delete.status | default(-1) | int in [200, 201, 204]
+          - delete_api_codes | reject('equalto', 0) | list | length == 0
+        fail_msg: >-
+          Network deletion was not confirmed for subnet_id={{ networks[0].subnet_id }}. {{ delete_diagnostic }} The cleanup
+          success message and local handoff removal have not been reached.
+      when: networks | length == 1
+    - name: '[SOLIDserver REST] Verify the demo resources are absent after cleanup'
+      ansible.builtin.uri:
+        url: >-
+          https://{{ solidserver.host }}/rest/{{ item.service }}?{{ {'WHERE': item.where, 'limit': 2} | urlencode }}
+      loop:
+        - service: ip_block_subnet_list
+          where: >-
+            site_name='{{ space }}' and (subnet_name='{{ network_name }}' or (start_hostaddr='{{ network.split('/')[0]
+            }}' and subnet_size={{ 2 ** (32 - (network.split('/')[1] | int)) }}))
+        - service: ip_address_list
+          where: site_name='{{ space }}' and type<>'free' and (hostaddr='{{ address }}' or name='{{ fqdn }}')
+        - service: dns_rr_list
+          where: dns_name='{{ dns_server }}' and rr_full_name='{{ fqdn }}'
+        - service: dns_rr_list
+          where: dns_name='{{ dns_server }}' and rr_full_name='{{ app_fqdn }}'
+        - service: dns_rr_list
+          where: '{{ ptr_where }}'
+      register: cleaned
+      failed_when: >-
+        cleaned.status not in [200, 204] or (cleaned.status == 200 and (cleaned.json is not defined or cleaned.json |
+        type_debug != 'list')) or (cleaned.json | default([]) | selectattr('errno', 'defined') | rejectattr('errno',
+        'in', [0, '0']) | list | length > 0)
+      no_log: true
+    - name: Require all demo resources to be absent before reporting cleanup success
+      ansible.builtin.assert:
+        that:
+          - cleaned.results[0].json | default([]) | length == 0
+          - cleaned.results[1].json | default([]) | length == 0
+          - cleaned.results[2].json | default([]) | length == 0
+          - cleaned.results[3].json | default([]) | length == 0
+          - cleaned.results[4].json | default([]) | length == 0
+        fail_msg: >-
+          Cleanup is incomplete. Matching resources still returned: networks={{ cleaned.results[0].json | default([])
+          | length }}, used_addresses={{ cleaned.results[1].json | default([]) | length }}, host_DNS_records={{ cleaned.results[2].json
+          | default([]) | length }}, application_aliases={{ cleaned.results[3].json | default([]) | length }}. {{ delete_diagnostic
+          if networks | length == 1 else 'No network deletion was needed.' }} Inspect the remaining resources before
+          continuing. Reverse_PTR_records={{ cleaned.results[4].json | default([]) | length }} on {{ reverse_server_name
+          }} for {{ ptr_name }}.
+      changed_when: networks | length == 1
+    - name: Remove the obsolete local handoff
+      ansible.builtin.file:
+        path: '{{ playbook_dir | dirname }}/result.json'
+        state: absent
+    - name: Show cleanup result
+      ansible.builtin.debug:
+        msg: >-
+          Application CNAME, host A/PTR records, address and empty child are absent. The parent and DNS zones are retained.

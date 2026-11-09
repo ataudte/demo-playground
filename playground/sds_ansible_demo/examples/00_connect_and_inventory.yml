@@ -1,0 +1,27 @@
+---
+- name: Connect and list IPAM spaces
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../config.json
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+  tasks:
+    # SOLIDserver integration: the EfficientIP collection performs this lookup.
+    - name: '[SOLIDserver collection] Read available IPAM spaces'
+      ansible.builtin.set_fact:
+        spaces: "{{ query('community.efficientip.solidserver_ipam_ip_space_list', provider=solidserver) }}"
+      no_log: true
+
+    - name: Confirm the configured space is visible
+      ansible.builtin.assert:
+        that: space in spaces
+        fail_msg: The configured space was not returned. Check its name and account visibility.
+
+    - name: Show connection result
+      ansible.builtin.debug:
+        msg:
+          manager: '{{ solidserver.host }}'
+          available_spaces: '{{ spaces }}'
+          selected_space: '{{ space }}'
