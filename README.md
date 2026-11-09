@@ -78,6 +78,15 @@ Small control script to manage a **dnscrypt-proxy** instance that is started wit
 ## Lab Environment 
 
 <details>
+  <summary>ansible-env</summary>
+
+* [ansible-env](playground/ansible-env)
+
+Reusable launcher for **Ansible environments**. Uses an existing Python installation to create or reuse a project-local virtual environment, checks and installs required dependencies, and opens an activated shell. Supports project-specific requirements and includes a local Ansible verification command.
+
+</details>
+
+<details>
   <summary>create_vm-from-iso</summary>
 
 * [create_vm-from-iso.sh](playground/create_vm-from-iso)
