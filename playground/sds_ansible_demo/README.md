@@ -1,10 +1,10 @@
 # sds_ansible_demo
 
-This SOLIDserver and Ansible demo uses the official [EfficientIP Ansible collection](https://gitlab.com/efficientip/efficientip-ansible-collection) and the SOLIDserver REST API to demonstrate an application endpoint lifecycle.
+This demo uses the official [EfficientIP Ansible collection](https://gitlab.com/efficientip/efficientip-ansible-collection) and the SOLIDserver REST API to demonstrate an application endpoint lifecycle.
 
 Six numbered playbooks connect to SOLIDserver, inspect IPAM, create a network and host with DNS, create an application alias, verify the resources and clean up. All examples are in [examples/](examples/). Integration tasks are labelled `[SOLIDserver collection]` or `[SOLIDserver REST]`.
 
-## Requirements and scope
+## Requirements and Scope
 
 - An Ansible control machine with Python 3, `venv`, `pip` and Git. Use a Python version supported by your chosen `ansible-core` release; see the [Ansible installation guide](https://docs.ansible.com/projects/ansible/latest/installation_guide/intro_installation.html).
 - An active Python virtual environment with Ansible installed, as shown below.
@@ -39,7 +39,7 @@ Settings are saved in `config.json` and reused. The password is hidden during en
 
 Press Enter to retain saved values. In later sessions, activate your virtual environment before running the launcher. Enter `q` to leave the demo menu and `deactivate` to leave the virtual environment.
 
-## Run the examples
+## Run the Examples
 
 Choose a numbered step from the menu, or run it directly:
 
@@ -60,6 +60,33 @@ To execute steps 00–04 in sequence:
 
 Cleanup is a separate step. In interactive mode, the menu appears once per session; enter `menu` to show it again.
 
+## Live view in a second terminal
+
+Open two terminal windows in the same demo directory.
+
+In the second window, start the companion view:
+
+```bash
+./sds_ansible_demo watch
+```
+
+In the first window, run the menu or an individual playbook as usual:
+
+```bash
+./sds_ansible_demo
+# Or: ./sds_ansible_demo 02
+```
+
+The companion follows the playbooks started by the launcher:
+
+- **Collection calls stand out:** a prominent coloured panel shows the `community.efficientip` module or lookup, its task, file location and source template. The latest executed collection task stays visible while REST tasks run. Skipped tasks are recorded in the history without replacing an earlier executed task.
+- **REST calls appear in a smaller grey panel**, showing their task and file location.
+- Status labels distinguish running, successful, changed, skipped and failed tasks. A short history retains the most recent completed tasks.
+
+The first terminal keeps its normal quiet or verbose output. The second window requires only Python; it does not prompt for credentials or install dependencies. Use a terminal at least 100 columns wide and 28 rows high for comfortable recording. Press Ctrl-C in the companion window to close that view while the first terminal continues running.
+
+The display follows Ansible task events, rather than individual HTTP requests. Skipped tasks are labelled as skipped. It shows source templates and task metadata; configuration values and API responses are not copied to the view. Its local event file is owner-only, kept under `.ansible/` and replaced when a new playbook starts. On startup, the companion shows the last recorded playbook and then follows new runs. Set `NO_COLOR=1` to disable colours.
+
 ## Host DNS and application DNS
 
 Step 02 creates or reuses the network and persistent host address. If IPAM-to-DNS automation already registered the host A record, the playbook reuses it and applies the selected TTL. Otherwise, it creates the A record.
@@ -75,7 +102,7 @@ ansible-demo-host-app.example.com. 300 IN CNAME ansible-demo-host.example.com.
 
 The application alias is one DNS label and defaults to the hostname plus `-app`. It must differ from the hostname. Matching reruns reuse the records and skip unchanged TTL updates. Conflicting resource identities stop the playbook.
 
-## Quiet and verbose output
+## Quiet and verbose Output
 
 The global setting near the top of the `sds_ansible_demo` launcher is:
 
@@ -101,7 +128,7 @@ When `solidserver.check_tls` is explicitly `false`, quiet mode suppresses urllib
 
 The callback in `callback_plugins/demo_quiet.py` formats console output and preserves Ansible's `no_log` handling.
 
-## TLS certificates
+## TLS Certificates
 
 Certificate verification is enabled by default. For a private CA or self-signed certificate, provide a trusted PEM CA bundle at the setup prompt. The configured manager hostname or IP must match the certificate's Subject Alternative Name.
 
@@ -143,7 +170,7 @@ For example, step 02 contains the collection call directly:
 
 The Python launcher handles prompts, saved settings, dependencies, playbook selection and output settings. SOLIDserver operations run in the playbooks. The EfficientIP collection is used without modifications. No custom roles, custom collections or metadata classes are required.
 
-## Verify and clean up
+## Verify and Clean-up
 
 Run 00 and 01 first, then 02, 03 and 04. Step 04 reads back the network, address, host A record and application CNAME. It writes their actual IDs and verified values to `result.json` only after the checks pass.
 

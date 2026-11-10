@@ -155,11 +155,11 @@ def environment(config):
         "ANSIBLE_LOCAL_TEMP": str(ROOT / ".ansible/tmp"),
         "ANSIBLE_COLLECTIONS_PATH": str(ROOT / ".ansible/collections"),
         "ANSIBLE_STDOUT_CALLBACK": "default" if VERBOSE else "demo_quiet",
+        "ANSIBLE_CALLBACK_PLUGINS": str(ROOT / "callback_plugins"),
+        "ANSIBLE_CALLBACKS_ENABLED": "demo_events",
     })
-    env.pop("ANSIBLE_CALLBACKS_ENABLED", None)
     if not VERBOSE:
         env.update({
-            "ANSIBLE_CALLBACK_PLUGINS": str(ROOT / "callback_plugins"),
             "ANSIBLE_DISPLAY_OK_HOSTS": "false",
             "ANSIBLE_DISPLAY_SKIPPED_HOSTS": "false",
             "ANSIBLE_VERBOSITY": "0",
@@ -211,19 +211,34 @@ def prepare(env):
 
 
 def run(step, env):
+    from demo_watch import EventWriter
+
     title, filename = STEPS[step]
     print(f"\n{step} — {title}", flush=True)
-    subprocess.run(["ansible-playbook", "-i", "localhost,", str(ROOT / "examples" / filename)],
-                   cwd=ROOT, env=env, check=True)
+    writer = EventWriter(ROOT)
+    if not writer.write("run_start", step=step, title=title, file="examples/" + filename):
+        print("Companion view unavailable: cannot write local task events.", file=sys.stderr)
+    play_env = dict(env, SDS_DEMO_RUN_ID=writer.run_id)
+    try:
+        subprocess.run(["ansible-playbook", "-i", "localhost,", str(ROOT / "examples" / filename)],
+                       cwd=ROOT, env=play_env, check=True)
+    except (subprocess.CalledProcessError, OSError, KeyboardInterrupt) as error:
+        writer.write("run_end", status="interrupted" if isinstance(error, KeyboardInterrupt) else "failed")
+        raise
+    writer.write("run_end", status="complete")
     if not VERBOSE:
         print("  OK\n", flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("step", nargs="?", choices=[*STEPS, "run", "config"],
-                        help="00–04: demo steps; 05: cleanup; run: create and verify; config: edit saved settings")
+    parser.add_argument("step", nargs="?", choices=[*STEPS, "run", "config", "watch"],
+                        help="00–04: demo steps; 05: cleanup; run: create and verify; config: edit settings; watch: live companion")
     args = parser.parse_args()
+    if args.step == "watch":
+        from demo_watch import watch
+        watch(ROOT)
+        return
     os.chdir(ROOT)
     previous = json.loads(CONFIG.read_text()) if CONFIG.exists() else None
     if args.step == "config" or previous is None:
