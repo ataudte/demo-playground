@@ -95,8 +95,14 @@
         mode: '0600'
     - name: Show the API verification summary
       ansible.builtin.debug:
-        msg: >-
-          Host {{ fqdn }} -> {{ address }} and alias {{ app_fqdn }} verified by API. Saved result.json.
+        msg:
+          Verification: SOLIDserver API
+          Network: '{{ network }}'
+          Host: '{{ fqdn }}'
+          Address: '{{ address }}'
+          Application alias: '{{ app_fqdn }}'
+          DNS TTL: '{{ ttl }} seconds'
+          Result: result.json
     - name: Show the full verified result
       ansible.builtin.debug:
         var: result

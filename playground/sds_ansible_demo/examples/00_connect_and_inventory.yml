@@ -22,6 +22,6 @@
     - name: Show connection result
       ansible.builtin.debug:
         msg:
-          manager: '{{ solidserver.host }}'
-          available_spaces: '{{ spaces }}'
-          selected_space: '{{ space }}'
+          Manager: '{{ solidserver.host }}'
+          Selected space: '{{ space }}'
+          Available spaces: '{{ spaces }}'

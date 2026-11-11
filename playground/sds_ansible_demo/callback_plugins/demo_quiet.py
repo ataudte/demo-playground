@@ -1,6 +1,9 @@
 """Show demo results; retain Ansible's normal failure diagnostics and no_log handling."""
 
-import json
+from collections.abc import Mapping
+import re
+import shutil
+import textwrap
 
 from ansible.plugins.callback.default import CallbackModule as DefaultCallback
 from ansible.plugins.callback.default import DOCUMENTATION as DEFAULT_DOCUMENTATION
@@ -20,13 +23,30 @@ class CallbackModule(DefaultCallback):
         self._play = play
 
     @staticmethod
-    def _compact(value):
-        if isinstance(value, list):
-            preview = json.dumps(value[:5], ensure_ascii=False)
-            return preview + (f" (+{len(value) - 5} more)" if len(value) > 5 else "")
-        if isinstance(value, dict):
-            return json.dumps(value, ensure_ascii=False)
-        return str(value)
+    def _wrap(value, width, prefix):
+        text = re.sub(r"[\x00-\x1f\x7f-\x9f]", " ", str(value))
+        return textwrap.wrap(text, width=width, initial_indent=prefix,
+                             subsequent_indent=" " * len(prefix),
+                             break_on_hyphens=False) or [prefix.rstrip()]
+
+    @classmethod
+    def _summary_lines(cls, value, width, indent=2):
+        prefix = " " * indent + "- "
+        if isinstance(value, Mapping):
+            for key, item in value.items():
+                if isinstance(item, (Mapping, list)):
+                    yield from cls._wrap(f"{key}:" + (" (none)" if not item else ""), width, prefix)
+                    if item:
+                        yield from cls._summary_lines(item, width, indent + 4)
+                else:
+                    yield from cls._wrap(f"{key}: {item}", width, prefix)
+        elif isinstance(value, list):
+            for item in value[:5]:
+                yield from cls._summary_lines(item, width, indent)
+            if len(value) > 5:
+                yield from cls._wrap(f"... (+{len(value) - 5} more)", width, " " * indent)
+        else:
+            yield from cls._wrap(value, width, prefix)
 
     def v2_runner_on_ok(self, result):
         self._handle_warnings_and_exception(result)
@@ -45,12 +65,9 @@ class CallbackModule(DefaultCallback):
         # the full step-04 handoff, remain available with VERBOSE = True.
         if "msg" not in data:
             return
-        message = data["msg"]
-        if isinstance(message, dict):
-            for key, value in message.items():
-                self._display.display(f"  {key}: {self._compact(value)}")
-        else:
-            self._display.display(f"  {self._compact(message)}")
+        width = max(20, shutil.get_terminal_size((80, 24)).columns - 1)
+        for line in self._summary_lines(data["msg"], width):
+            self._display.display(line)
 
     def v2_runner_item_on_ok(self, result):
         self._handle_warnings_and_exception(result)

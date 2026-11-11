@@ -335,5 +335,10 @@
         state: absent
     - name: Show cleanup result
       ansible.builtin.debug:
-        msg: >-
-          Application CNAME, host A/PTR records, address and empty child are absent. The parent and DNS zones are retained.
+        msg:
+          Application CNAME: absent
+          Host A record: absent
+          Host PTR record: absent
+          IPAM address: absent
+          Child network: absent
+          Retained: Parent network and DNS zones

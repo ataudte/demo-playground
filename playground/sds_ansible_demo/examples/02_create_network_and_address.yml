@@ -239,5 +239,9 @@
         actual: '{{ dns_readback.json | default([]) }}'
     - name: Show the provisioned host and its DNS record
       ansible.builtin.debug:
-        msg: >-
-          Network {{ network }}, host {{ fqdn }} -> {{ address }}, TTL={{ ttl }}.
+        msg:
+          Network: '{{ network }}'
+          Host: '{{ fqdn }}'
+          Address: '{{ address }}'
+          DNS record: A
+          TTL: '{{ ttl }} seconds'

@@ -26,8 +26,8 @@
     - name: Show the selected context
       ansible.builtin.debug:
         msg:
-          space: '{{ space }}'
-          parent: '{{ parent_network }}'
-          networks_preview: '{{ networks[:20] }}'
-          demo_network: '{{ network }}'
-          demo_address: '{{ address }}'
+          Space: '{{ space }}'
+          Parent network: '{{ parent_network }}'
+          Demo network: '{{ network }}'
+          Demo address: '{{ address }}'
+          Networks (preview): '{{ networks[:20] }}'

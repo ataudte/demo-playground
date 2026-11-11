@@ -180,5 +180,8 @@
         actual: '{{ dns_readback.json | default([]) }}'
     - name: Show the application DNS name and its host target
       ansible.builtin.debug:
-        msg: >-
-          {{ app_fqdn }} CNAME {{ fqdn }}. TTL={{ ttl }}.
+        msg:
+          Application alias: '{{ app_fqdn }}'
+          DNS record: CNAME
+          Target: '{{ fqdn }}'
+          TTL: '{{ ttl }} seconds'
