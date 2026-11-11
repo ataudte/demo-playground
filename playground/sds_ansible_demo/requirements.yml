@@ -1,6 +1,0 @@
----
-collections:
-  - name: https://gitlab.com/efficientip/efficientip-ansible-collection.git
-    type: git
-    # Official 1.2.0 source, unchanged.
-    version: e893d61ff6cc13945859900d3763a0316b80c732
