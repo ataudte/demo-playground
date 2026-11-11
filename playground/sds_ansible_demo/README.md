@@ -1,33 +1,19 @@
 # sds_ansible_demo
 
-This demo uses the official [EfficientIP Ansible collection](https://gitlab.com/efficientip/efficientip-ansible-collection)
-(`community.efficientip`) and the SOLIDserver REST API to demonstrate an
-application endpoint lifecycle.
+This demo uses the official [EfficientIP Ansible collection](https://gitlab.com/efficientip/efficientip-ansible-collection) (`community.efficientip`) and the SOLIDserver REST API to demonstrate an application endpoint lifecycle.
 
-Six numbered playbooks connect to SOLIDserver, inspect IPAM, create a network and
-host with DNS, create an application alias, verify the resources and clean up.
-All examples are in [examples/](examples/). Integration tasks are labelled
-`[SOLIDserver collection]` or `[SOLIDserver REST]`.
+Six numbered playbooks connect to SOLIDserver, inspect IPAM, create a network and host with DNS, create an application alias, verify the resources and clean up. All examples are in [examples/](examples/). Integration tasks are labelled `[SOLIDserver collection]` or `[SOLIDserver REST]`.
 
 ## Requirements and scope
 
-- An Ansible control machine with Python 3, `venv`, `pip` and Git. Use a Python
-  version supported by your chosen `ansible-core` release; see the
-  [Ansible installation guide](https://docs.ansible.com/projects/ansible/latest/installation_guide/intro_installation.html).
+- An Ansible control machine with Python 3, `venv`, `pip` and Git. Use a Python version supported by your chosen `ansible-core` release; see the [Ansible installation guide](https://docs.ansible.com/projects/ansible/latest/installation_guide/intro_installation.html).
 - An active Python virtual environment with Ansible installed, as shown below.
 - A reachable SOLIDserver manager using Basic authentication over HTTPS.
-- An API account that can read the selected context and create/delete the demo
-  network, address and DNS records. Cleanup also needs visibility of used
-  addresses and pools in the child network, and any matching reverse DNS record.
-- An existing IPAM space and parent IPv4 network, plus a DNS server or Smart and
-  an existing forward zone in the default DNS view.
-- A dedicated child subnet within that parent, a usable IPv4 address, a hostname
-  and a distinct application alias.
+- An API account that can read the selected context and create/delete the demo network, address and DNS records. Cleanup also needs visibility of used addresses and pools in the child network, and any matching reverse DNS record.
+- An existing IPAM space and parent IPv4 network, plus a DNS server or Smart and an existing forward zone in the default DNS view.
+- A dedicated child subnet within that parent, a usable IPv4 address, a hostname and a distinct application alias.
 
-All playbooks run locally and access SOLIDserver over HTTPS. Steps 02, 03 and 05
-change SOLIDserver resources. The demo covers one host A record and one application
-CNAME, matching reruns and applying the selected TTL. Changes to an existing host
-address, record type or CNAME target are outside this flow.
+All playbooks run locally and access SOLIDserver over HTTPS. Steps 02, 03 and 05 change SOLIDserver resources. The demo covers one host A record and one application CNAME, matching reruns and applying the selected TTL. Changes to an existing host address, record type or CNAME target are outside this flow.
 
 ## Start
 
@@ -41,28 +27,17 @@ python -m pip install ansible-core
 ./sds_ansible_demo
 ```
 
-If you already have an active virtual environment with Ansible installed, run
-`./sds_ansible_demo` directly. The launcher installs `SOLIDserverRest==2.14.0` and
-the EfficientIP collection automatically when first needed. The collection is
-pinned in `requirements.yml` to version 1.2.0, commit
-`e893d61ff6cc13945859900d3763a0316b80c732`.
+If you already have an active virtual environment with Ansible installed, run `./sds_ansible_demo` directly. The launcher installs `SOLIDserverRest==2.14.0` and the EfficientIP collection automatically when first needed. The collection is pinned in `requirements.yml` to version 1.2.0, commit `e893d61ff6cc13945859900d3763a0316b80c732`.
 
-On first run, answer the prompts for the manager, API credentials, TLS verification,
-optional CA bundle, IPAM space, parent network, demo network/address, DNS server,
-zone, hostname, application alias and TTL. The TTL defaults to 300 seconds and
-applies to the host A record and application CNAME.
+On first run, answer the prompts for the manager, API credentials, TLS verification, optional CA bundle, IPAM space, parent network, demo network/address, DNS server, zone, hostname, application alias and TTL. The TTL defaults to 300 seconds and applies to the host A record and application CNAME.
 
-Settings are saved in `config.json` and reused. The password is hidden during
-entry. The file contains credentials, has owner-only permissions (`0600`) and is
-ignored by Git. Change saved settings with:
+Settings are saved in `config.json` and reused. The password is hidden during entry. The file contains credentials, has owner-only permissions (`0600`) and is ignored by Git. Change saved settings with:
 
 ```bash
 ./sds_ansible_demo config
 ```
 
-Press Enter to retain saved values. In later sessions, activate your virtual
-environment before running the launcher. Enter `q` to leave the demo menu and
-`deactivate` to leave the virtual environment.
+Press Enter to retain saved values. In later sessions, activate your virtual environment before running the launcher. Enter `q` to leave the demo menu and `deactivate` to leave the virtual environment.
 
 ## Run the examples
 
@@ -83,8 +58,7 @@ To execute steps 00–04 in sequence:
 ./sds_ansible_demo run
 ```
 
-Cleanup is a separate step. In interactive mode, the menu appears once per
-session; enter `menu` to show it again.
+Cleanup is a separate step. In interactive mode, the menu appears once per session; enter `menu` to show it again.
 
 ## Live view in a second terminal
 
@@ -105,50 +79,28 @@ In the first window, run the menu or an individual playbook as usual:
 
 The companion follows the playbooks started by the launcher:
 
-- **Collection calls stand out:** a prominent coloured panel shows the
-  `community.efficientip` module or lookup, its task, file location and source
-  template. The latest executed collection task stays visible while REST tasks
-  run. Skipped tasks are recorded in the history without replacing an earlier
-  executed task.
-- **REST calls appear in a smaller grey panel**, showing their task and file
-  location.
-- Status labels distinguish running, successful, changed, skipped and failed
-  tasks. A short history retains the most recent completed tasks.
+- **Collection calls stand out:** a prominent coloured panel shows the `community.efficientip` module or lookup, its task, file location and source template. The latest executed collection task stays visible while REST tasks run. Skipped tasks are recorded in the history without replacing an earlier executed task.
+- **REST calls appear in a smaller grey panel**, showing their task and file location.
+- Status labels distinguish running, successful, changed, skipped and failed tasks. A short history retains the most recent completed tasks.
 
-The first terminal keeps its normal quiet or verbose output. The second window
-requires only Python; it does not prompt for credentials or install dependencies.
-Use a terminal at least 100 columns wide and 28 rows high for comfortable recording.
-Press Ctrl-C in the companion window to close that view while the first terminal
-continues running.
+The first terminal keeps its normal quiet or verbose output. The second window requires only Python; it does not prompt for credentials or install dependencies. Use a terminal at least 100 columns wide and 28 rows high for comfortable recording. Press Ctrl-C in the companion window to close that view while the first terminal continues running.
 
-The display follows Ansible task events, rather than individual HTTP requests.
-Skipped tasks are labelled as skipped. It shows source templates and task metadata;
-configuration values and API responses are not copied to the view. Its local event
-file is owner-only, kept under `.ansible/` and replaced when a new playbook starts.
-On startup, the companion shows the last recorded playbook and then follows new
-runs. Set `NO_COLOR=1` to disable colours.
+The display follows Ansible task events, rather than individual HTTP requests. Skipped tasks are labelled as skipped. It shows source templates and task metadata. Configuration values and API responses are not copied to the view. Its local event file is owner-only, kept under `.ansible/` and replaced when a new playbook starts. On startup, the companion shows the last recorded playbook and then follows new runs. Set `NO_COLOR=1` to disable colours.
 
 ## Host DNS and application DNS
 
-Step 02 creates or reuses the network and persistent host address. If IPAM-to-DNS
-automation already registered the host A record, the playbook reuses it and
-applies the selected TTL. Otherwise, it creates the A record.
+Step 02 creates or reuses the network and persistent host address. If IPAM-to-DNS automation already registered the host A record, the playbook reuses it and applies the selected TTL. Otherwise, it creates the A record.
 
-Step 03 creates a separate application CNAME pointing to that host. This gives
-the application its own DNS name without allocating another address.
+Step 03 creates a separate application CNAME pointing to that host. This gives the application its own DNS name without allocating another address.
 
-The setup defaults are `ansible-demo-network` for the child network,
-`ansible-demo-host` for the hostname and `ansible-demo-host-app` for the application
-alias. With `example.com` as the configured zone:
+The setup defaults are `ansible-demo-network` for the child network, `ansible-demo-host` for the hostname and `ansible-demo-host-app` for the application alias. With `example.com` as the configured zone:
 
 ```dns
 ansible-demo-host.example.com.     300 IN A     10.20.30.40
 ansible-demo-host-app.example.com. 300 IN CNAME ansible-demo-host.example.com.
 ```
 
-The application alias is one DNS label and defaults to the hostname plus `-app`.
-It must differ from the hostname. Matching reruns reuse the records and skip
-unchanged TTL updates. Conflicting resource identities stop the playbook.
+The application alias is one DNS label and defaults to the hostname plus `-app`. It must differ from the hostname. Matching reruns reuse the records and skip unchanged TTL updates. Conflicting resource identities stop the playbook.
 
 ## Quiet and verbose output
 
@@ -158,10 +110,7 @@ The global setting near the top of the `sds_ansible_demo` launcher is:
 VERBOSE = False
 ```
 
-Quiet mode shows the step title, a list of labelled results and `OK` after success.
-Task banners, successful task details, skipped tasks and Ansible recaps are hidden.
-Inventory lists show at most five entries, one per line. Long values wrap with
-indentation to fit the terminal width. For example:
+Quiet mode shows the step title, a list of labelled results and `OK` after success. Task banners, successful task details, skipped tasks and Ansible recaps are hidden. Inventory lists show at most five entries, one per line. Long values wrap with indentation to fit the terminal width. For example:
 
 ```text
 02 — Create the demo network, host address and host A record
@@ -180,23 +129,15 @@ indentation to fit the terminal width. For example:
   OK
 ```
 
-Set `VERBOSE = True` to show full Ansible task output, complete lists, the verified
-handoff and dependency installation logs. Use a Python boolean without quotes.
-The setting applies to individual steps and `run`.
+Set `VERBOSE = True` to show full Ansible task output, complete lists, the verified handoff and dependency installation logs. Use a Python boolean without quotes. The setting applies to individual steps and `run`.
 
-When `solidserver.check_tls` is explicitly `false`, quiet mode suppresses urllib3's
-repeated `InsecureRequestWarning` about unverified HTTPS. Verbose mode shows it
-again. Other warnings and failure diagnostics remain visible, and a failed step
-stops the run. Failed dependency installs also show their output.
+When `solidserver.check_tls` is explicitly `false`, quiet mode suppresses urllib3's repeated `InsecureRequestWarning` about unverified HTTPS. Verbose mode shows it again. Other warnings and failure diagnostics remain visible, and a failed step stops the run. Failed dependency installs also show their output.
 
-The callback in `callback_plugins/demo_quiet.py` formats console output and
-preserves Ansible's `no_log` handling.
+The callback in `callback_plugins/demo_quiet.py` formats console output and preserves Ansible's `no_log` handling.
 
 ## TLS certificates
 
-Certificate verification is enabled by default. For a private CA or self-signed
-certificate, provide a trusted PEM CA bundle at the setup prompt. The configured
-manager hostname or IP must match the certificate's Subject Alternative Name.
+Certificate verification is enabled by default. For a private CA or self-signed certificate, provide a trusted PEM CA bundle at the setup prompt. The configured manager hostname or IP must match the certificate's Subject Alternative Name.
 
 For a controlled lab, you can explicitly disable verification. Run:
 
@@ -204,13 +145,9 @@ For a controlled lab, you can explicitly disable verification. Run:
 ./sds_ansible_demo config
 ```
 
-At `Verify TLS certificate (no for a self-signed lab)`, enter `no`. This saves
-`solidserver.check_tls` as the JSON boolean `false`. All six examples use this
-setting. HTTPS remains in use, but the appliance certificate and identity are
-not checked.
+At `Verify TLS certificate (no for a self-signed lab)`, enter `no`. This saves `solidserver.check_tls` as the JSON boolean `false`. All six examples use this setting. HTTPS remains in use, but the appliance certificate and identity are not checked.
 
-If step 00 failed with `CERTIFICATE_VERIFY_FAILED`, review these settings and
-retry it after saving the configuration.
+If step 00 failed with `CERTIFICATE_VERIFY_FAILED`, review these settings and retry it after saving the configuration.
 
 ## Where SOLIDserver is integrated
 
@@ -238,32 +175,18 @@ For example, step 02 contains the collection call directly:
     state: present
 ```
 
-The Python launcher handles prompts, saved settings, dependencies, playbook
-selection and output settings. SOLIDserver operations run in the playbooks.
-The EfficientIP collection is used without modifications. No custom roles,
-custom collections or metadata classes are required.
+The Python launcher handles prompts, saved settings, dependencies, playbook selection and output settings. SOLIDserver operations run in the playbooks. The EfficientIP collection is used without modifications. No custom roles, custom collections or metadata classes are required.
 
 ## Verify and clean up
 
-Run 00 and 01 first, then 02, 03 and 04. Step 04 reads back the network, address,
-host A record and application CNAME. It writes their actual IDs and verified
-values to `result.json` only after the checks pass.
+Run 00 and 01 first, then 02, 03 and 04. Step 04 reads back the network, address, host A record and application CNAME. It writes their actual IDs and verified values to `result.json` only after the checks pass.
 
-Verification covers the SOLIDserver API. Query the authoritative DNS server
-separately to confirm DNS publication and resolution.
+Verification covers the SOLIDserver API. Query the authoritative DNS server separately to confirm DNS publication and resolution.
 
-Repeat 02, 03 and 04 with the same settings to demonstrate matching reruns.
-Resource creation and unchanged TTL updates should be skipped.
+Repeat 02, 03 and 04 with the same settings to demonstrate matching reruns. Resource creation and unchanged TTL updates should be skipped.
 
-Step 05 removes the application CNAME, host A record and IPAM address. It then
-removes any remaining matching host PTR and the empty child network. Cleanup
-verifies that these resources are absent before removing `result.json`. A child
-network containing used addresses or pools is retained. The parent network and
-DNS zones are retained. A second cleanup should make no remote changes.
+Step 05 removes the application CNAME, host A record and IPAM address. It then removes any remaining matching host PTR and the empty child network. Cleanup verifies that these resources are absent before removing `result.json`. A child network containing used addresses or pools is retained. The parent network and DNS zones are retained. A second cleanup should make no remote changes.
 
-After a failed step, inspect the actual state before continuing; there is no
-automatic rollback. A `result.json` from an earlier run does not verify a failed
-run. Saved credentials, results, virtual environments and installed dependencies
-stay local and are ignored by Git.
+After a failed step, inspect the actual state before continuing; there is no automatic rollback. A `result.json` from an earlier run does not verify a failed run. Saved credentials, results, virtual environments and installed dependencies stay local and are ignored by Git.
 
 Licensed under the [MIT License](LICENSE).

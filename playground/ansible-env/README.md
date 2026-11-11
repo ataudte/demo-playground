@@ -1,4 +1,4 @@
-# Ansible Environment
+# ansible-env
 
 A reusable launcher for Ansible projects. It uses an existing Python installation, creates or reuses a project-local virtual environment, installs missing dependencies and opens an activated shell.
 
