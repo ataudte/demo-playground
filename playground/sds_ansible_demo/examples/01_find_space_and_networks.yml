@@ -1,0 +1,33 @@
+---
+- name: Inspect the IPAM space and parent network
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../config.json
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+  tasks:
+    # SOLIDserver integration: lookup returns CIDRs from the selected space.
+    - name: '[SOLIDserver collection] Read networks and blocks'
+      ansible.builtin.set_fact:
+        networks: >-
+          {{ query('community.efficientip.solidserver_ipam_ip_network_list',
+                   host=solidserver.host, username=solidserver.username,
+                   password=solidserver.password, authentication='basic',
+                   check_tls=solidserver.check_tls, space=space, terminal=false) }}
+      no_log: true
+
+    - name: Confirm the approved parent exists
+      ansible.builtin.assert:
+        that: parent_network in networks
+        fail_msg: The parent CIDR is not visible in the selected space.
+
+    - name: Show the selected context
+      ansible.builtin.debug:
+        msg:
+          Space: '{{ space }}'
+          Parent network: '{{ parent_network }}'
+          Demo network: '{{ network }}'
+          Demo address: '{{ address }}'
+          Networks (preview): '{{ networks[:20] }}'

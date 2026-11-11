@@ -1,0 +1,2 @@
+# Ansible itself is supplied by ansible-env.
+SOLIDserverRest==2.14.0
